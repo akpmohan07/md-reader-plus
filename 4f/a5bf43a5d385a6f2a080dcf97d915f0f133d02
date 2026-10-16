@@ -1,0 +1,56 @@
+src/_locales/uk/messages.json
+  s_9cfc427898b89a::t_af76b3252450ce 3
+src/_locales/en/messages.json
+  s_9cfc427898b89a::t_af76b3252450ce 3
+package.json
+  s_9cfc427898b89a::t_8fb4962aa3f22c 28
+src/_locales/zh_CN/messages.json
+  s_9cfc427898b89a::t_af76b3252450ce 3
+src/core/dir-listing.ts
+  s_9cfc427898b89a::t_04e8bd225f0aa5 1-104
+  s_9cfc427898b89a::t_abf26445a39159 105
+src/config/class-name.ts
+  s_9cfc427898b89a::t_e26d7888458183 9-12
+src/_locales/en_US/messages.json
+  s_9cfc427898b89a::t_af76b3252450ce 3
+tests/dir-listing.test.mjs
+  s_9cfc427898b89a::t_21c6ae8f089953 1-62
+  s_9cfc427898b89a::t_73c891517f1508 63-65
+  s_9cfc427898b89a::t_32e651e16c6b12 66-68
+src/main.ts
+  s_9cfc427898b89a::t_e26d7888458183 11,126-128,144-185
+  s_9cfc427898b89a::t_8d7e393e66aa8f 186-187
+  s_9cfc427898b89a::t_3a894f93c1f08e 198,269
+src/_locales/ko/messages.json
+  s_9cfc427898b89a::t_af76b3252450ce 3
+src/_locales/en_GB/messages.json
+  s_9cfc427898b89a::t_af76b3252450ce 3
+src/side/files.ts
+  s_9cfc427898b89a::t_e49cc5ec72a00b 1-360
+  s_9cfc427898b89a::t_76bdc8759e92d8 361-363
+  s_9cfc427898b89a::t_d9f6443ff54ce6 364-380
+src/style/index.less
+  s_9cfc427898b89a::t_5a2c838af45ddc 21-23,31,91-284,286-288
+  s_9cfc427898b89a::t_af76b3252450ce 285
+  s_9cfc427898b89a::t_45248e0aa07f77 289
+src/background.ts
+  s_9cfc427898b89a::t_bf45b844cfa892 3,25-53
+src/_locales/zh_TW/messages.json
+  s_9cfc427898b89a::t_af76b3252450ce 3
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4fa5bf43a5d385a6f2a080dcf97d915f0f133d02",
+  "prompts": {},
+  "sessions": {
+    "s_9cfc427898b89a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "212e2b88-3ff7-4c47-89c6-7ce141bfef0a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Mohankumar Muthusamy <akpmohan07@gmail.com>"
+    }
+  }
+}
