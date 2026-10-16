@@ -1,0 +1,51 @@
+e2e/fixture/jobs/.hidden/x.md
+  s_9cfc427898b89a::t_125cde49543187 1
+e2e/fixture/jobs/README.md
+  s_9cfc427898b89a::t_5413175befcd40 1
+e2e/fixture/jobs/companies/amazon.md
+  s_9cfc427898b89a::t_258d7d8ec6ee83 1-3
+"e2e/fixture/jobs/my notes/a b.md"
+  s_9cfc427898b89a::t_20145249677920 1
+e2e/fixture/jobs/notes.txt
+  s_9cfc427898b89a::t_9724b7f7ba50d3 1
+e2e/package-lock.json
+  s_9cfc427898b89a::t_0ee3de7e122e6d 1-57
+e2e/package.json
+  s_9cfc427898b89a::t_4d63bdc35d7220 1-11
+FORK.md
+  s_9cfc427898b89a::t_c59861c3ac7790 1-67
+docs/fork/FEASIBILITY.md
+  s_9cfc427898b89a::t_f4776950de14cf 1-118
+e2e/e2e.mjs
+  s_9cfc427898b89a::t_39e4eafbbda481 1-163
+e2e/fixture/jobs/applications/amazon-21.md
+  s_9cfc427898b89a::t_76dda4e882f423 1-21
+e2e/fixture/jobs/applications/archive/old-2025.md
+  s_9cfc427898b89a::t_d1973f8acb5bcf 1-3
+e2e/fixture/jobs/applications/cisco-11.md
+  s_9cfc427898b89a::t_17edfc5475672f 1-5
+e2e/fixture/jobs/applications/ibm-12.md
+  s_9cfc427898b89a::t_1ed16774078d4a 1-5
+e2e/fixture/jobs/applications/ibm-3.md
+  s_9cfc427898b89a::t_67d7346089d935 1-5
+e2e/fixture/jobs/applications/revolut-17.md
+  s_9cfc427898b89a::t_6a1eb2ed6ba057 1-5
+e2e/spike.mjs
+  s_9cfc427898b89a::t_6a6427a4bcc22b 1-57
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "2cc91ea123d34141def62bbf5792f83bba7cc876",
+  "prompts": {},
+  "sessions": {
+    "s_9cfc427898b89a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "212e2b88-3ff7-4c47-89c6-7ce141bfef0a",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "Mohankumar Muthusamy <akpmohan07@gmail.com>"
+    }
+  }
+}
