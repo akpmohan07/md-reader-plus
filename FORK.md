@@ -36,6 +36,10 @@ After pulling changes: `pnpm build`, then click ↻ on the extension card.
   dotfolders and `node_modules` are hidden, names sort naturally (`ibm-3` before `ibm-12`), and the current file is highlighted.
 - **Root control:** ↑ shows the parent folder, double-click a folder to make it the root, ⌖ goes back to the file's own folder.
   The chosen root is remembered for every file under it, so open `jobs/` once and it stays the root.
+- **Sort menu (⇅):** Name A→Z / Z→A, Modified newest / oldest, Size largest first, plus a "Folders first" toggle.
+  Modified and size sorts show a small label on each file (`5m`, `3h`, `2d`, `26 Sept`, `2.0 kB`), and hovering a file shows
+  its full modified time and size. Name search results follow the same sort. The choice is remembered, and the ⇅ icon is
+  highlighted when it's not the default.
 - **Expanded folders remembered** across pages and reloads.
 - **Search** over the whole tree: filename matches appear instantly, and content matches show up to 3 highlighted lines per file.
   Enter opens the first hit, Esc clears.
@@ -55,7 +59,7 @@ Changed upstream files are kept small so `git merge upstream/main` stays easy:
 
 ```bash
 pnpm test                             # unit tests: listing parser + upstream graphviz
-cd e2e && npm i && npx playwright install chromium && npm run e2e   # real Chromium, 8 steps, writes docs/fork/screenshots/
+cd e2e && npm i && npx playwright install chromium && npm run e2e   # real Chromium, 11 steps, writes docs/fork/screenshots/
 ```
 
 ## Limits

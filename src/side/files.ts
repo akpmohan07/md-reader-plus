@@ -4,16 +4,22 @@ import {
   dirName,
   dirOf,
   dirsBetween,
+  formatAge,
+  formatSize,
+  isSortMode,
   isVisibleEntry,
   parentDir,
   relativePath,
   sortEntries,
+  SORT_MODES,
   type DirEntry,
+  type SortMode,
 } from '@/core/dir-listing'
 
 const PREFIX = 'md-reader__files'
 const ROOTS_KEY = 'filesRoots'
 const EXPANDED_KEY = 'filesExpanded'
+const SORT_KEY = 'filesSort'
 const MAX_EXPANDED = 500
 const MAX_CRAWL_FILES = 3000
 const MAX_CRAWL_DEPTH = 8
@@ -84,6 +90,8 @@ export function createFilesPanel(currentUrl: string): FilesPanel {
   const textCache = new Map<string, Promise<string>>()
   let crawlCache: Promise<DirEntry[]> = null
   let searchToken = 0
+  let sortMode: SortMode = 'name-asc'
+  let foldersFirst = true
 
   /* ---------- DOM ---------- */
   const panel = new Ele<HTMLElement>('div', { className: PREFIX })
@@ -94,9 +102,16 @@ export function createFilesPanel(currentUrl: string): FilesPanel {
   const rootLabel = el('span', `${PREFIX}-root`)
   const resetBtn = el<HTMLButtonElement>('button', `${PREFIX}-icon-btn`, '⌖')
   resetBtn.title = "Back to this file's folder"
+  const sortBtn = el<HTMLButtonElement>('button', `${PREFIX}-icon-btn`, '⇅')
+  sortBtn.title = 'Sort'
+  sortBtn.setAttribute('aria-haspopup', 'menu')
   const refreshBtn = el<HTMLButtonElement>('button', `${PREFIX}-icon-btn`, '↻')
   refreshBtn.title = 'Refresh'
-  toolbar.append(upBtn, rootLabel, resetBtn, refreshBtn)
+  toolbar.append(upBtn, rootLabel, resetBtn, sortBtn, refreshBtn)
+
+  const sortMenu = el('div', `${PREFIX}-menu`)
+  sortMenu.setAttribute('role', 'menu')
+  sortMenu.hidden = true
 
   const search = el<HTMLInputElement>('input', `${PREFIX}-search`)
   search.type = 'search'
@@ -107,7 +122,7 @@ export function createFilesPanel(currentUrl: string): FilesPanel {
   const results = el('div', `${PREFIX}-results`)
   results.hidden = true
 
-  panel.append([toolbar, search, tree, results])
+  panel.append([toolbar, sortMenu, search, tree, results])
 
   /* ---------- data ---------- */
   function list(dirUrl: string): Promise<DirEntry[]> {
@@ -116,7 +131,7 @@ export function createFilesPanel(currentUrl: string): FilesPanel {
         dirUrl,
         send<ListResult>('listDir', { url: dirUrl }).then(res => {
           if (!res || res.error) throw new Error(res?.error ?? 'No response')
-          return sortEntries(res.entries.filter(isVisibleEntry))
+          return res.entries.filter(isVisibleEntry)
         }),
       )
     }
@@ -166,6 +181,12 @@ export function createFilesPanel(currentUrl: string): FilesPanel {
         .filter(r => currentDir.startsWith(r))
         .sort((a, b) => b.length - a.length)[0] ?? currentDir
     expanded = new Set(await local.get<string[]>(EXPANDED_KEY, []))
+    const sort = await local.get<{ mode?: string; foldersFirst?: boolean }>(
+      SORT_KEY,
+      {},
+    )
+    sortMode = isSortMode(sort.mode) ? sort.mode : 'name-asc'
+    foldersFirst = sort.foldersFirst !== false
     dirsBetween(root, currentDir).forEach(d => expanded.add(d))
     render()
   }
@@ -184,8 +205,19 @@ export function createFilesPanel(currentUrl: string): FilesPanel {
     await load()
   }
 
+  function setSort(mode: SortMode, folders: boolean) {
+    sortMode = mode
+    foldersFirst = folders
+    local.set(SORT_KEY, { mode, foldersFirst: folders })
+    rerender()
+  }
+
   /* ---------- render ---------- */
   function render() {
+    sortBtn.classList.toggle('is-on', sortMode !== 'name-asc' || !foldersFirst)
+    sortBtn.title = `Sort: ${SORT_MODES[sortMode]}${
+      foldersFirst ? '' : ', folders mixed in'
+    }`
     rootLabel.textContent = dirName(root)
     rootLabel.title = decodeURIComponent(new URL(root).pathname)
     upBtn.disabled = parentDir(root) === root
@@ -208,7 +240,9 @@ export function createFilesPanel(currentUrl: string): FilesPanel {
           empty.style.paddingLeft = indent(depth)
           container.append(empty)
         }
-        for (const entry of entries) container.append(renderEntry(entry, depth))
+        for (const entry of sortEntries(entries, sortMode, foldersFirst)) {
+          container.append(renderEntry(entry, depth))
+        }
         const active = container.querySelector<HTMLElement>(
           `.${PREFIX}-row.is-active`,
         )
@@ -234,6 +268,14 @@ export function createFilesPanel(currentUrl: string): FilesPanel {
 
     if (!entry.isDir) {
       if (entry.url === currentFile) row.classList.add('is-active')
+      const meta = metaLabel(entry)
+      meta && row.append(el('span', `${PREFIX}-meta`, meta))
+      if (entry.mtime) {
+        const modified = new Date(entry.mtime * 1000).toLocaleString()
+        row.title = `${entry.name}\nModified ${modified} · ${formatSize(
+          entry.size,
+        )}`
+      }
       return row
     }
 
@@ -268,6 +310,56 @@ export function createFilesPanel(currentUrl: string): FilesPanel {
 
   const indent = (depth: number) => `${0.6 + depth * 0.9}em`
 
+  /** Right-aligned hint matching the active sort, so the order is explainable. */
+  function metaLabel(entry: DirEntry): string {
+    if (sortMode.startsWith('mtime'))
+      return entry.mtime ? formatAge(entry.mtime) : ''
+    if (sortMode === 'size-desc') return formatSize(entry.size)
+    return ''
+  }
+
+  /* ---------- sort menu ---------- */
+  function renderMenu() {
+    sortMenu.textContent = ''
+    const item = (label: string, checked: boolean, onClick: () => void) => {
+      const btn = el<HTMLButtonElement>('button', `${PREFIX}-menu-item`)
+      btn.setAttribute('role', 'menuitemradio')
+      btn.setAttribute('aria-checked', String(checked))
+      btn.append(el('span', `${PREFIX}-check`, checked ? '✓' : ''), label)
+      btn.addEventListener('click', () => {
+        onClick()
+        closeMenu()
+      })
+      sortMenu.append(btn)
+    }
+    for (const mode of Object.keys(SORT_MODES) as SortMode[]) {
+      item(SORT_MODES[mode], mode === sortMode, () =>
+        setSort(mode, foldersFirst),
+      )
+    }
+    sortMenu.append(el('div', `${PREFIX}-menu-sep`))
+    item('Folders first', foldersFirst, () => setSort(sortMode, !foldersFirst))
+  }
+
+  function openMenu() {
+    renderMenu()
+    sortMenu.hidden = false
+    sortBtn.classList.add('is-active')
+    setTimeout(() => document.addEventListener('click', onOutsideClick, true))
+    sortMenu.querySelector<HTMLElement>('[aria-checked="true"]')?.focus()
+  }
+
+  function closeMenu() {
+    sortMenu.hidden = true
+    sortBtn.classList.remove('is-active')
+    document.removeEventListener('click', onOutsideClick, true)
+  }
+
+  function onOutsideClick(e: MouseEvent) {
+    const target = e.target as Node
+    if (!sortMenu.contains(target) && !sortBtn.contains(target)) closeMenu()
+  }
+
   /* ---------- search ---------- */
   async function runSearch() {
     const query = search.value.trim()
@@ -291,7 +383,9 @@ export function createFilesPanel(currentUrl: string): FilesPanel {
     nameSection.append(
       el('div', `${PREFIX}-heading`, `Names · ${byName.length}`),
     )
-    byName.forEach(f => nameSection.append(resultRow(f, query)))
+    sortEntries(byName, sortMode, false).forEach(f =>
+      nameSection.append(resultRow(f, query)),
+    )
 
     if (query.length < 2) return
     const heading = el('div', `${PREFIX}-heading`, 'Content · searching…')
@@ -348,6 +442,23 @@ export function createFilesPanel(currentUrl: string): FilesPanel {
   upBtn.addEventListener('click', () => setRoot(parentDir(root)))
   resetBtn.addEventListener('click', () => setRoot(currentDir))
   refreshBtn.addEventListener('click', () => refresh())
+  sortBtn.addEventListener('click', () =>
+    sortMenu.hidden ? openMenu() : closeMenu(),
+  )
+  sortMenu.addEventListener('keydown', e => {
+    const items = Array.from(
+      sortMenu.querySelectorAll<HTMLElement>(`.${PREFIX}-menu-item`),
+    )
+    const at = items.indexOf(document.activeElement as HTMLElement)
+    if (e.key === 'Escape') {
+      closeMenu()
+      sortBtn.focus()
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault()
+      const step = e.key === 'ArrowDown' ? 1 : -1
+      items[(at + step + items.length) % items.length]?.focus()
+    }
+  })
   search.addEventListener('input', debounce(runSearch, 200))
   search.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
@@ -365,6 +476,11 @@ export function createFilesPanel(currentUrl: string): FilesPanel {
     listCache = new Map()
     textCache.clear()
     crawlCache = null
+    rerender()
+  }
+
+  /** Re-render from the current caches, keeping the scroll position. */
+  function rerender() {
     const scroll = tree.scrollTop
     render()
     setTimeout(() => (tree.scrollTop = scroll), 50)
