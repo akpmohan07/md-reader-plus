@@ -1,0 +1,29 @@
+FORK.md
+  s_9cfc427898b89a::t_c0026a5be87d57 39-42,62
+e2e/e2e.mjs
+  s_9cfc427898b89a::t_df60bd1e8010b7 39-45,47-60,181-268
+src/core/dir-listing.ts
+  s_9cfc427898b89a::t_19dbcfb170c749 63-93,96,100-127
+src/style/index.less
+  s_9cfc427898b89a::t_b6c706f0104a8f 133,174-230
+src/side/files.ts
+  s_9cfc427898b89a::t_9fc1562973d9ca 7-9,14,16,22,93-94,105-107,110-114,125,134,184-189,208-214,217-220,243-245,271-278,313-362,386-388,445-461,479-483
+tests/dir-listing.test.mjs
+  s_9cfc427898b89a::t_15f67025f95f0e 69-160
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "4a577e147b64af5fe9cfa6bf20e96ae5b0e51e59",
+  "prompts": {},
+  "sessions": {
+    "s_9cfc427898b89a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "212e2b88-3ff7-4c47-89c6-7ce141bfef0a",
+        "model": "unknown"
+      },
+      "human_author": "Mohankumar Muthusamy <akpmohan07@gmail.com>"
+    }
+  }
+}
