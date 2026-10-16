@@ -1,0 +1,19 @@
+pnpm-lock.yaml
+  s_9cfc427898b89a::t_e08b09dfd134d5 40-42,664-669,5018-5019
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "9ed5a1bcd84d88948f36d4d0b40ff3dac6236251",
+  "prompts": {},
+  "sessions": {
+    "s_9cfc427898b89a": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "212e2b88-3ff7-4c47-89c6-7ce141bfef0a",
+        "model": "unknown"
+      },
+      "human_author": "Mohankumar Muthusamy <akpmohan07@gmail.com>"
+    }
+  }
+}
