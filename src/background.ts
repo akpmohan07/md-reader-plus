@@ -1,5 +1,6 @@
 import storage from '@/core/storage'
 import commands from '@/core/commands'
+import { parseDirListing } from '@/core/dir-listing'
 
 chrome.runtime.onMessage.addListener(({ action, data }, sender, callback) => {
   messageHandler(action, data, sender, callback)
@@ -21,6 +22,35 @@ async function messageHandler(
     case 'fetch':
       fetchData(sender.url).then(callback)
       break
+    case 'listDir':
+      listDir(data?.url).then(callback)
+      break
+    case 'fetchText':
+      fetchText(data?.url).then(callback)
+      break
+  }
+}
+
+// Only local files: the side panel never needs to read other origins.
+const isFileUrl = (url?: string) =>
+  typeof url === 'string' && url.startsWith('file://')
+
+async function listDir(url?: string) {
+  if (!isFileUrl(url)) return { error: 'Not a file:// URL' }
+  try {
+    const html = await (await fetch(url)).text()
+    return { entries: parseDirListing(html, url) }
+  } catch (err) {
+    return { error: String(err?.message ?? err) }
+  }
+}
+
+async function fetchText(url?: string) {
+  if (!isFileUrl(url)) return { error: 'Not a file:// URL' }
+  try {
+    return { text: await (await fetch(url)).text() }
+  } catch (err) {
+    return { error: String(err?.message ?? err) }
   }
 }
 
@@ -61,7 +91,3 @@ function updatePage(key: keyof typeof actionMap, value?: any) {
         chrome.tabs.sendMessage(tabs[0].id, { action, data: { key, value } })
     })
 }
-
-chrome.runtime.setUninstallURL(
-  'https://github.com/orgs/md-reader/discussions/51',
-)

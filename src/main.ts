@@ -8,6 +8,7 @@ import className from '@/config/class-name'
 import type { Theme } from '@/config/page-themes'
 import { getDefaultData, type Data } from '@/core/data'
 import { mdRender, type MdOptions } from '@/core/markdown'
+import { createFilesPanel } from '@/side/files'
 import {
   getHeads,
   getRawContainer,
@@ -122,7 +123,9 @@ function main(data: Data) {
   )
 
   /* render side */
-  const mdSide = new Ele<HTMLElement>('ul', { className: className.MD_SIDE })
+  const mdSide = new Ele<HTMLElement>('ul', {
+    className: className.MD_SIDE_TOC,
+  })
   let idCache: { [content: string]: number } = Object.create(null)
   let headElements: HTMLElement[] = []
   let sideLiElements: HTMLElement[] = []
@@ -138,6 +141,50 @@ function main(data: Data) {
   renderSide()
   document.addEventListener('scroll', throttle(onScroll, 100))
 
+  /* side tabs: Files (local folders only) / Outline */
+  const sideWrap = new Ele<HTMLElement>('aside', {
+    className: className.MD_SIDE,
+  })
+  if (window.location.protocol === 'file:') {
+    const filesPanel = createFilesPanel(window.location.href)
+    const tabBar = new Ele<HTMLElement>('div', {
+      className: className.MD_SIDE_TABS,
+    })
+    const tabs = {
+      files: new Ele<HTMLElement>('button', {
+        className: className.MD_SIDE_TAB,
+      }),
+      outline: new Ele<HTMLElement>('button', {
+        className: className.MD_SIDE_TAB,
+      }),
+    }
+    tabs.files.textContent = 'Files'
+    tabs.outline.textContent = 'Outline'
+    const selectTab = (tab: keyof typeof tabs) => {
+      tabs.files.classList.toggle(className.MD_SIDE_TAB_ACTIVE, tab === 'files')
+      tabs.outline.classList.toggle(
+        className.MD_SIDE_TAB_ACTIVE,
+        tab === 'outline',
+      )
+      filesPanel.ele.toggle(tab === 'files')
+      mdSide.toggle(tab === 'outline')
+      chrome.storage.local.set({ sideTab: tab })
+      tab === 'outline' && setTimeout(onScroll, 0)
+    }
+    tabs.files.on('click', () => selectTab('files'))
+    tabs.outline.on('click', () => selectTab('outline'))
+    tabBar.append([tabs.files, tabs.outline])
+    sideWrap.append([tabBar, filesPanel.ele, mdSide])
+    chrome.storage.local.get('sideTab', ({ sideTab }) =>
+      selectTab(sideTab === 'outline' ? 'outline' : 'files'),
+    )
+    document.addEventListener('visibilitychange', () => {
+      document.visibilityState === 'visible' && filesPanel.refresh()
+    })
+  } else {
+    sideWrap.append(mdSide)
+  }
+
   /* render raw toggle button */
   const rawToggleBtn = new Ele<HTMLElement>(
     'button',
@@ -148,7 +195,7 @@ function main(data: Data) {
     svg(codeIcon),
   )
   rawToggleBtn.on('click', () => {
-    lifecycle.toggleRaw([mdBody, mdSide])
+    lifecycle.toggleRaw([mdBody, sideWrap])
   })
 
   /* render side expand button */
@@ -219,7 +266,7 @@ function main(data: Data) {
   )
 
   /* mount elements */
-  lifecycle.mount([buttonWrap, mdBody, mdSide])
+  lifecycle.mount([buttonWrap, mdBody, sideWrap])
   updateAnchorPosition()
 
   darkMediaQuery.addEventListener('change', (e: MediaQueryListEvent) => {
