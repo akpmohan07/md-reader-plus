@@ -36,8 +36,28 @@ const errors = []
 page.on('pageerror', e => errors.push(String(e)))
 const rows = () =>
   page.$$eval('.md-reader__files-tree .md-reader__files-row', els =>
-    els.filter(e => e.offsetParent).map(e => e.textContent.trim()),
+    els
+      .filter(e => e.offsetParent)
+      .map(e =>
+        ['caret', 'icon', 'name']
+          .map(k => e.querySelector(`.md-reader__files-${k}`).textContent)
+          .join(''),
+      ),
   )
+const appFiles = [
+  'amazon-21.md',
+  'cisco-11.md',
+  'ibm-3.md',
+  'ibm-12.md',
+  'revolut-17.md',
+]
+const appOrder = async () =>
+  (await rows()).map(r => r.slice(1)).filter(n => appFiles.includes(n))
+const sortBtn = '.md-reader__files-icon-btn[aria-haspopup="menu"]'
+const pickSort = async label => {
+  await page.click(sortBtn)
+  await page.click(`.md-reader__files-menu-item:has-text("${label}")`)
+}
 const step = async (name, fn) => {
   await fn()
   await page.screenshot({ path: path.join(shots, `${name}.png`) })
@@ -156,6 +176,94 @@ await step('8-new-file-appears-on-refresh', async () => {
   await page.click('.md-reader__files-icon-btn[title="Refresh"]')
   await page.waitForSelector('text=zeta-99.md')
   fs.unlinkSync(`${fixture}/applications/zeta-99.md`)
+})
+
+await step('9-sort-menu', async () => {
+  // Deterministic mtimes: ibm-3 newest … ibm-12 oldest.
+  const now = Date.now() / 1000
+  const ages = {
+    'ibm-3.md': 60 * 5,
+    'revolut-17.md': 3600 * 3,
+    'amazon-21.md': 86400 * 2,
+    'cisco-11.md': 86400 * 20,
+    'ibm-12.md': 86400 * 400,
+  }
+  for (const [f, age] of Object.entries(ages)) {
+    fs.utimesSync(`${fixture}/applications/${f}`, now - age, now - age)
+  }
+  const worker = ctx
+    .serviceWorkers()
+    .filter(w => w.url().includes(id))
+    .pop()
+  await worker.evaluate(() => chrome.storage.local.set({ pageTheme: 'light' }))
+  await page.goto(`file://${fixture}/applications/amazon-21.md`)
+  await page.waitForSelector('.md-reader__files-row.is-active')
+  assert.deepEqual(await appOrder(), appFiles)
+  await page.click(sortBtn)
+  await page.waitForSelector(
+    '.md-reader__files-menu-item[aria-checked="true"]:has-text("Name (A → Z)")',
+  )
+})
+
+await step('10-sort-modified', async () => {
+  await page.click(
+    '.md-reader__files-menu-item:has-text("Modified (newest first)")',
+  )
+  assert.ok(await page.isHidden('.md-reader__files-menu'), 'menu closes')
+  await page.waitForSelector('.md-reader__files-meta')
+  const newest = [
+    'ibm-3.md',
+    'revolut-17.md',
+    'amazon-21.md',
+    'cisco-11.md',
+    'ibm-12.md',
+  ]
+  assert.deepEqual(await appOrder(), newest)
+  const metas = await page.$$eval('.md-reader__files-meta', els =>
+    els.map(e => e.textContent),
+  )
+  assert.ok(
+    ['5m', '3h', '2d'].every(m => metas.includes(m)),
+    metas.join(),
+  )
+  await page.reload()
+  await page.waitForSelector('.md-reader__files-row.is-active')
+  assert.deepEqual(await appOrder(), newest, 'sort persists across reloads')
+})
+
+await step('11-sort-other-modes', async () => {
+  await pickSort('Name (Z → A)')
+  await page.waitForSelector('.md-reader__files-row.is-active')
+  assert.deepEqual(await appOrder(), [...appFiles].reverse())
+  await pickSort('Modified (oldest first)')
+  await page.waitForSelector('.md-reader__files-meta')
+  assert.deepEqual(await appOrder(), [
+    'ibm-12.md',
+    'cisco-11.md',
+    'amazon-21.md',
+    'revolut-17.md',
+    'ibm-3.md',
+  ])
+  await pickSort('Folders first')
+  assert.match(await page.getAttribute(sortBtn, 'title'), /folders mixed in/)
+  // Name search results follow the sort too.
+  await page.fill('.md-reader__files-search', '.md')
+  await page.waitForFunction(() =>
+    /Names · \d/.test(
+      document.querySelector('.md-reader__files-results').textContent,
+    ),
+  )
+  assert.match(
+    await page.textContent(
+      '.md-reader__files-results .md-reader__files-result',
+    ),
+    /ibm-12\.md/,
+  )
+  await page.fill('.md-reader__files-search', '')
+  await pickSort('Folders first')
+  await pickSort('Name (A → Z)')
+  await page.waitForSelector('.md-reader__files-row.is-active')
+  assert.deepEqual(await appOrder(), appFiles)
 })
 
 assert.deepEqual(errors, [])
